@@ -44,7 +44,7 @@ service:
   targetPort: 5000
 
 ingress:
-  enabled: false
+  enabled: true
   className: ""
   annotations:
     {}
