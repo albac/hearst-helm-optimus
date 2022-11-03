@@ -11,6 +11,7 @@ env:
     TAG: "latest"
     EKS_NAME: "hearst-optimus"
     EKS_KUBECTL_ROLE_ARN: "arn:aws:iam::849514089141:role/EksCodeBuildKubectlRole"
+    ADMIN_ROLE: "arn:aws:iam::849514089141:role/AdminForAmplify"
 phases:
   install:
     commands:
@@ -40,7 +41,7 @@ phases:
       - docker tag $IMAGE_NAME:$TAG $REGISTRY_URL/$IMAGE_NAME:$TAG
   post_build:
     commands:
-      - CREDENTIALS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
+      - CREDENTIALS=$(aws sts assume-role --role-arn $ADMIN_ROLE --role-session-name codebuild-kubectl --duration-seconds 900)
       - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
       - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
       - export AWS_SESSION_TOKEN="$(echo ${CREDENTIALS} | jq -r '.Credentials.SessionToken')"
