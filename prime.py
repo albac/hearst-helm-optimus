@@ -18,7 +18,14 @@ def get_instance_id():
 
 @app.route('/number/<int:num>', methods=['GET'])
 def is_prime(num):
-    return jsonify({'result': num*10})
+    if num > 1:
+        for i in range(2, int(num/2)+1):
+            if (num % i) == 0:
+                return jsonify({'Message': 'Optimus says it is Not a Prime'})
+            else:
+                return jsonify({'Message': 'Optimus says it is a Prime'})
+
+    return jsonify({'Message': 'Optimus says it is Not a Prime'})
 
 
 if __name__ == "__main__":
