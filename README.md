@@ -1,0 +1,1 @@
+# This repository contains the Dockerfile for creating an image of the WAR application and a Jenkinsfile to deploy the WAR app to a kubernetes cluster as a helm chart. For the implementation details, please do see the PDF included in the mail attachment. 

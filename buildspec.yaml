@@ -1,0 +1,65 @@
+version: 0.2
+
+env:
+  secrets-manager:
+    DOCKER_USER: "DOCKERHUB:dockerhub_login"
+    DOCKER_PASS: "DOCKERHUB:dockerhub_pass"
+  variables:
+    IMAGE_NAME: "hearst-helm-optimus"
+    REGISTRY_URL: "849514089141.dkr.ecr.us-west-2.amazonaws.com"
+    AWS_REGION: "us-west-2"
+    TAG: "latest"
+    EKS_NAME: "backbaseCluster"
+    EKS_KUBECTL_ROLE_ARN: "arn:aws:iam::849514089141:role/EksCodeBuildKubectlRole"
+phases:
+  install:
+    commands:
+      - apt-get update
+      - apt install -y awscli git python3
+      - curl -o aws-iam-authenticator https://s3.us-west-2.amazonaws.com/amazon-eks/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
+      - chmod +x ./aws-iam-authenticator
+      - mkdir -p ~/bin && cp ./aws-iam-authenticator ~/bin/aws-iam-authenticator && export PATH=~/bin:$PATH
+      - mv ./aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+      - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      - chmod +x kubectl
+      - mv ./kubectl /usr/local/bin/kubectl
+      - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+      - chmod 700 get_helm.sh
+      - ./get_helm.sh
+  pre_build:
+    commands:
+      - export KUBECONFIG=$HOME/.kube/config
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REGISTRY_URL
+  build:
+    commands:
+      - echo Entered the build phase...
+      - echo Build started on `date`
+      - docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - docker build -t $IMAGE_NAME .
+      - docker tag $IMAGE_NAME:$TAG $REGISTRY_URL/$IMAGE_NAME:$TAG
+  post_build:
+    commands:
+      - CREDENTIALS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
+      - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
+      - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
+      - export AWS_SESSION_TOKEN="$(echo ${CREDENTIALS} | jq -r '.Credentials.SessionToken')"
+      - export AWS_EXPIRATION=$(echo ${CREDENTIALS} | jq -r '.Credentials.Expiration')
+      # Setup kubectl with our EKS Cluster
+      - aws sts get-caller-identity
+      - echo EKS_NAME $EKS_NAME
+      - echo Update kubeconfig…
+      - aws eks update-kubeconfig --name $EKS_NAME
+      - kubectl get configmap aws-auth -o yaml -n kube-system
+      - kubectl version
+      - echo Get EKS nodes...
+      - kubectl get nodes,services
+      - echo Push to ECR
+      - docker push $REGISTRY_URL/$IMAGE_NAME:$TAG
+      - helm upgrade --wait --install $IMAGE_NAME optimus
+      - echo Cleaning up
+      - docker image prune -af
+
+artifacts:
+  files:
+    - "**/*"

@@ -1,0 +1,20 @@
+---
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: hearst-optimus
+  region: us-west-2
+  version: "1.21"
+
+managedNodeGroups:
+  - name: managedprimary
+    desiredCapacity: 2
+    instanceType: t3.micro
+    ssh:
+      enableSsm: true
+
+# To enable all of the control plane logs, uncomment below:
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["*"]
