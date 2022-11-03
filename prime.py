@@ -13,7 +13,7 @@ def get_instance_id():
         return jsonify({'Processing': some_json})
     else:
         return jsonify({'InstanceID': instance_id,
-                        'Message': 'Autobots, fall back!'})
+                        'Message': 'Autobots, fall back now!'})
 
 
 @app.route('/number/<int:num>', methods=['GET'])
