@@ -9,7 +9,7 @@ env:
     REGISTRY_URL: "849514089141.dkr.ecr.us-west-2.amazonaws.com"
     AWS_REGION: "us-west-2"
     TAG: "latest"
-    EKS_NAME: "backbaseCluster"
+    EKS_NAME: "hearst-optimus"
     EKS_KUBECTL_ROLE_ARN: "arn:aws:iam::849514089141:role/EksCodeBuildKubectlRole"
 phases:
   install:
